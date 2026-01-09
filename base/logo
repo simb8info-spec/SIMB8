@@ -1,1 +1,73 @@
+<canvas id="simb8-canvas" style="width:100%;height:520px;display:block;"></canvas>
+
+<script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
+
+  const canvas = document.getElementById('simb8-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 3.2);
+
+  const light1 = new THREE.DirectionalLight(0xffffff, 1.1);
+  light1.position.set(2, 2, 2);
+  scene.add(light1);
+
+  const light2 = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(light2);
+
+  const tex = await new THREE.TextureLoader().loadAsync('assets/simb8-logo-3d.png');
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const geo = new THREE.PlaneGeometry(2.6, 1.4, 1, 1);
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    transparent: true,
+    roughness: 0.45,
+    metalness: 0.15,
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  // легкий “обʼєм” через тіньовий дубль позаду
+  const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:true, opacity:0.18 });
+  const shadow = new THREE.Mesh(geo, shadowMat);
+  shadow.position.z = -0.06;
+  shadow.scale.set(1.02, 1.02, 1);
+  scene.add(shadow);
+
+  const state = { mx: 0, my: 0 };
+  window.addEventListener('pointermove', (e) => {
+    const r = canvas.getBoundingClientRect();
+    state.mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+    state.my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+  });
+
+  function resize(){
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function tick(t){
+    const k = 0.10;
+    mesh.rotation.y += ((-state.mx * 0.35) - mesh.rotation.y) * k;
+    mesh.rotation.x += (( state.my * 0.18) - mesh.rotation.x) * k;
+
+    // легкий “пульс”
+    const s = 1 + Math.sin(t * 0.0012) * 0.01;
+    mesh.scale.set(s, s, 1);
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+</script>
 
